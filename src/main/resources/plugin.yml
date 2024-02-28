@@ -1,0 +1,4 @@
+name: SharedEnderPearls
+version: '${project.version}'
+main: cloud.thehsi.sharedenderpearls.Main
+api-version: '1.20'
