@@ -2,3 +2,11 @@ name: SharedEnderPearls
 version: '${project.version}'
 main: cloud.thehsi.sharedenderpearls.Main
 api-version: '1.20'
+commands:
+  sep:
+    usage: "/sharedenderpearls <rule> <true|false>"
+    description: "Toggle Shared Ender Pearls Rules"
+    aliases:
+      - sep
+      - sharedenderpearls
+    permission: cloud.thehsi.sharedenderpearls.config
