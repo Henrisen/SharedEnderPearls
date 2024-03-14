@@ -215,21 +215,20 @@ public class Throw implements Listener {
 
     private void playerOfflineError(Player player, String target) {
         if (!main.enabled) return;
-        TextComponent tellrawMessage = new TextComponent("");
-        TextComponent prefixComponent = new TextComponent("[SEP] ");
-        prefixComponent.setColor(ChatColor.DARK_AQUA);
-        prefixComponent.setBold(true);
-        tellrawMessage.addExtra(prefixComponent);
-        tellrawMessage.setColor(ChatColor.RED);
-        tellrawMessage.addExtra("Player [");
-        TextComponent playerNameComponent = new TextComponent(target);
-        playerNameComponent.setColor(ChatColor.RED);
-        playerNameComponent.setBold(true);
-        tellrawMessage.addExtra(playerNameComponent);
-        tellrawMessage.addExtra("] is not online!");
+        String msg = ChatColor.DARK_AQUA.toString() +
+                ChatColor.BOLD +
+                "[SEP] " +
+                ChatColor.RESET +
+                ChatColor.RED +
+                "Player [" +
+                ChatColor.BOLD +
+                target +
+                ChatColor.RESET +
+                ChatColor.RED +
+                "] is not online!";
         player.playSound(player, Sound.ENTITY_ENDER_EYE_DEATH,  SoundCategory.PLAYERS, 1, 1);
 
         // Send the tellraw message to the player
-        player.spigot().sendMessage(tellrawMessage);
+        player.sendMessage(msg);
     }
 }
