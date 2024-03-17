@@ -16,13 +16,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.http.HttpRequest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 public class UpdateChecker {
     private final String version;
@@ -30,14 +24,35 @@ public class UpdateChecker {
         this.version = version;
     }
 
-    private int parseVersion(String version) {
-        version = version.replace("v", "");
-        String[] parts = version.split("\\."); // Split the version string by dots
-        int result = 0;
-        for (String part : parts) {
-            result = result * 1000 + Integer.parseInt(part); // Convert each part to integer and combine
+    public static int[] parseVersion(String version) {
+        int[] result = new int[3];
+        String[] parts = version.substring(1).split("\\.");
+
+        for (int i = 0; i < parts.length && i < 3; i++) {
+            result[i] = Integer.parseInt(parts[i]);
         }
+
         return result;
+    }
+
+    public static boolean compareVersions(String version1, String version2) {
+        int[] v1 = parseVersion(version1);
+        int[] v2 = parseVersion(version2);
+
+        // Compare major versions
+        if (v1[0] > v2[0])
+            return true;
+        else if (v1[0] < v2[0])
+            return false;
+
+        // Compare minor versions
+        if (v1[1] > v2[1])
+            return true;
+        else if (v1[1] < v2[1])
+            return false;
+
+        // Compare patch versions
+        return v1[2] > v2[2];
     }
 
     public Boolean check() throws IOException {
@@ -62,7 +77,7 @@ public class UpdateChecker {
             throw new RuntimeException(e);
         }
         JSONObject jsonObject = (JSONObject) jsonArray.get(0);
-        return parseVersion(this.version) < parseVersion((String) jsonObject.get("tag_name"));
+        return compareVersions((String) jsonObject.get("tag_name"), this.version);
     }
 
     public StringBuilder latest() throws IOException {

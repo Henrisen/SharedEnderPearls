@@ -2,7 +2,6 @@ package cloud.thehsi.sharedenderpearls.Listeners;
 
 import cloud.thehsi.sharedenderpearls.Main;
 import cloud.thehsi.sharedenderpearls.ToolBelt;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
@@ -13,10 +12,12 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
@@ -25,6 +26,7 @@ import java.util.logging.Level;
 
 public class Throw implements Listener {
     public Plugin plugin;
+    private final List<Entity> onGround = new ArrayList<>();
     public Main main;
     private final ToolBelt toolBelt;
     public List<Player> teleportExclude = new ArrayList<>();
@@ -37,8 +39,8 @@ public class Throw implements Listener {
 
     @EventHandler
     public void onPlayerClick(EntityDamageByEntityEvent event) {
-        if (!main.enabled) return;
-        if (!main.canStealPearls) return;
+        if (!main.settings.get("enabled")) return;
+        if (!main.settings.get("canStealPearls")) return;
         if (event.getEntity() instanceof Player & event.getDamager() instanceof Player) {
             Player d = (Player) event.getDamager();
             Player p = (Player) event.getEntity();
@@ -70,7 +72,7 @@ public class Throw implements Listener {
 
     @EventHandler
     public void onThrow(PlayerInteractEvent event) {
-        if (!main.enabled) return;
+        if (!main.settings.get("enabled")) return;
         Player p = event.getPlayer();
         try {
             if (event.getItem() == null) return;
@@ -106,12 +108,11 @@ public class Throw implements Listener {
 
     @EventHandler
     public void onLand(ProjectileHitEvent event) {
-        if (!main.enabled) return;
+        if (!main.settings.get("enabled")) return;
         if (event.getEntity().getType() != EntityType.ENDER_PEARL) return;
         EnderPearl ep = (EnderPearl) event.getEntity();
         ItemStack itemStack = ep.getItem();
-        if (!(event.getEntity().getShooter() instanceof Player)) return;
-        Player p = (Player) event.getEntity().getShooter();
+        if (!(event.getEntity().getShooter() instanceof Player p)) return;
         if (Objects.requireNonNull(itemStack.getItemMeta()).getPersistentDataContainer().has(toolBelt.key("bind"))) {
             Player t = plugin.getServer().getPlayerExact(Objects.requireNonNull(itemStack.getItemMeta().getPersistentDataContainer().get(toolBelt.key("bind"), PersistentDataType.STRING)));
             teleportExclude.add(p);
@@ -136,21 +137,30 @@ public class Throw implements Listener {
 
     @EventHandler
     public void onTeleport(PlayerTeleportEvent event) {
-        if (!main.enabled) return;
+        if (!main.settings.get("enabled")) return;
         if (event.getCause() == PlayerTeleportEvent.TeleportCause.ENDER_PEARL & teleportExclude.contains(event.getPlayer())) {
             teleportExclude.remove(event.getPlayer());
             event.setCancelled(true);
+        }
+        // Cancel Post TP Fall Damage
+        if (!main.settings.get("disablePostTeleportFallDamage")) return;
+        if (event.getCause() != PlayerTeleportEvent.TeleportCause.ENDER_PEARL) return;
+        for (Entity e : event.getPlayer().getWorld().getNearbyEntities(event.getPlayer().getLocation(), 1,1,1, (entity) -> entity.getType() == EntityType.ENDER_PEARL)) {
+            EnderPearl enderPearl = (EnderPearl) e;
+            if (enderPearl.getItem().getItemMeta() == null) return;
+            if (enderPearl.getItem().getItemMeta().getPersistentDataContainer().has(toolBelt.key("bind"))) {
+                event.getPlayer().setMetadata("enderPearlFalling", new FixedMetadataValue(plugin, true));
+            }
         }
     }
 
     @EventHandler
     public void onEPThrow(ProjectileLaunchEvent event) {
-        if (!main.enabled) return;
+        if (!main.settings.get("enabled")) return;
         if (event.getEntity().getType() != EntityType.ENDER_PEARL) return;
         EnderPearl ep = (EnderPearl) event.getEntity();
         ItemStack itemStack = ep.getItem();
-        if (!(event.getEntity().getShooter() instanceof Player)) return;
-        Player p = (Player) event.getEntity().getShooter();
+        if (!(event.getEntity().getShooter() instanceof Player p)) return;
         if (Objects.requireNonNull(itemStack.getItemMeta()).getPersistentDataContainer().has(toolBelt.key("bind"))) {
             Player t = plugin.getServer().getPlayerExact(Objects.requireNonNull(itemStack.getItemMeta().getPersistentDataContainer().get(toolBelt.key("bind"), PersistentDataType.STRING)));
             if (t == null & !p.isSneaking()) {
@@ -164,7 +174,7 @@ public class Throw implements Listener {
 
     @EventHandler
     private void inventoryOpen(InventoryOpenEvent event) {
-        if (!main.enabled) return;
+        if (!main.settings.get("enabled")) return;
         Inventory inv = event.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {
             ItemStack item = inv.getItem(i);
@@ -188,9 +198,8 @@ public class Throw implements Listener {
 
     @EventHandler
     private void itemPickup(EntityPickupItemEvent event) {
-        if (!main.enabled) return;
-        if (!(event.getEntity() instanceof Player)) return;
-        Player p = (Player) event.getEntity();
+        if (!main.settings.get("enabled")) return;
+        if (!(event.getEntity() instanceof Player p)) return;
         Inventory inv = p.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {
             ItemStack item = inv.getItem(i);
@@ -214,7 +223,7 @@ public class Throw implements Listener {
 
 
     private void playerOfflineError(Player player, String target) {
-        if (!main.enabled) return;
+        if (!main.settings.get("enabled")) return;
         String msg = ChatColor.DARK_AQUA.toString() +
                 ChatColor.BOLD +
                 "[SEP] " +
@@ -226,9 +235,34 @@ public class Throw implements Listener {
                 ChatColor.RESET +
                 ChatColor.RED +
                 "] is not online!";
-        player.playSound(player, Sound.ENTITY_ENDER_EYE_DEATH,  SoundCategory.PLAYERS, 1, 1);
+        player.playSound(player, Sound.ENTITY_ENDER_EYE_DEATH, SoundCategory.PLAYERS, 1, 1);
 
         // Send the tellraw message to the player
         player.sendMessage(msg);
     }
+
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player player && event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            if (player.hasMetadata("enderPearlFalling") && player.getMetadata("enderPearlFalling").get(0).asBoolean()) {
+                event.setCancelled(true);
+                player.removeMetadata("enderPearlFalling", plugin);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Entity e = event.getPlayer();
+        if (e.getFallDistance() == 0 && e.isOnGround() && e.getLocation().getBlock().getType() == Material.AIR) {
+            if (onGround.contains(e)) {
+                e.removeMetadata("enderPearlFalling", plugin);
+                return;
+            }
+            onGround.add(e);
+            return;
+        }
+        onGround.remove(e);
+    }
+
 }
