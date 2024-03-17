@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -19,19 +20,48 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @SuppressWarnings("unused")
 public final class Main extends JavaPlugin {
 
     private final ToolBelt toolBelt = new ToolBelt(this);
-    public Boolean enabled = true;
-    public Boolean canStealPearls = false;
 
-    public String version = "v1.1.1";
+    public HashMap<String, Boolean> settings = new HashMap<>();
+    FileConfiguration config = getConfig();
+
+    public String version = "v1.2";
+
+    private void loadConfig() {
+        for (String key : settings.keySet()) {
+            config.addDefault(key, settings.get(key));
+        }
+
+        for (String key : settings.keySet()) {
+            settings.replace(key, config.getBoolean(key));
+        }
+
+        config.options().copyDefaults(true);
+        saveConfig();
+    }
+
+    private void setConfig() {
+        for (String key : settings.keySet()) {
+            config.set(key, settings.get(key));
+        }
+
+        saveConfig();
+    }
 
     @Override
     public void onEnable() {
+        settings.put("canStealPearls", false);
+        settings.put("disablePostTeleportFallDamage", false);
+        settings.put("enabled", true);
+
+        loadConfig();
+
         PluginManager pl = getServer().getPluginManager();
         pl.registerEvents(new Throw(this, this), this);
 
@@ -84,7 +114,7 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        setConfig();
     }
 
 
