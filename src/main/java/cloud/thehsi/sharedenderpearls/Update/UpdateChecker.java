@@ -1,16 +1,15 @@
 package cloud.thehsi.sharedenderpearls.Update;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -77,7 +76,52 @@ public class UpdateChecker {
             throw new RuntimeException(e);
         }
         JSONObject jsonObject = (JSONObject) jsonArray.get(0);
-        return compareVersions((String) jsonObject.get("tag_name"), this.version);
+        Boolean old = compareVersions((String) jsonObject.get("tag_name"), this.version);
+        if (!old && compareVersions(this.version, (String) jsonObject.get("tag_name"))) {
+            String msg1 = ChatColor.DARK_AQUA.toString() +
+                    ChatColor.BOLD +
+                    "[SEP] " +
+                    ChatColor.RESET +
+                    ChatColor.GOLD +
+                    "SharedEnderPearls [" +
+                    ChatColor.BOLD +
+                    this.version +
+                    ChatColor.RESET +
+                    ChatColor.GOLD +
+                    "] is a dev build!" +
+                    ChatColor.RESET;
+            String msg2 = ChatColor.DARK_AQUA.toString() +
+                    ChatColor.BOLD +
+                    "[SEP] " +
+                    ChatColor.RESET +
+                    ChatColor.RED +
+                    ChatColor.BOLD +
+                    "Please do NOT Share the .jar file!" +
+                    ChatColor.RESET;
+            String msg3 = ChatColor.DARK_AQUA.toString() +
+                    ChatColor.BOLD +
+                    "[SEP] " +
+                    ChatColor.RESET +
+                    ChatColor.RED +
+                    "DO NOT USE FOR PRODUCTION" +
+                    ChatColor.RESET;
+            TextComponent master = new TextComponent("");
+            master.addExtra("\n");
+            master.addExtra(msg1);
+            master.addExtra("\n");
+            master.addExtra(msg2);
+            master.addExtra("\n");
+            master.addExtra(msg3);
+            master.addExtra("\n");
+            Bukkit.getConsoleSender().spigot().sendMessage(master);
+            for (OfflinePlayer op : Bukkit.getOperators()) {
+                if (!op.isOnline()) continue;
+                Player p = op.getPlayer();
+                assert p != null;
+                p.spigot().sendMessage(master);
+            }
+        }
+        return old;
     }
 
     public StringBuilder latest() throws IOException {
@@ -185,6 +229,10 @@ public class UpdateChecker {
         }
         String ver = (String) jsonObject.get("tag_name");
         String url = (String) jsonObject.get("html_url");
+        return getTextComponent(ver, url);
+    }
+
+    private TextComponent getTextComponent(String ver, String url) {
         String msg1 = ChatColor.DARK_AQUA.toString() +
                 ChatColor.BOLD +
                 "[SEP] " +
@@ -209,6 +257,10 @@ public class UpdateChecker {
                 ChatColor.RED +
                 "] now!" +
                 ChatColor.RESET;
+        return getTextComponent(url, msg1, msg2);
+    }
+
+    private static TextComponent getTextComponent(String url, String msg1, String msg2) {
         String msg3 = ChatColor.DARK_AQUA.toString() +
                 ChatColor.BOLD +
                 "[SEP] " +

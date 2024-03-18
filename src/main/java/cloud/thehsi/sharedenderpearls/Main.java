@@ -1,6 +1,7 @@
 package cloud.thehsi.sharedenderpearls;
 
 import cloud.thehsi.sharedenderpearls.Commands.Sep;
+import cloud.thehsi.sharedenderpearls.Crafting.HeadToPearl;
 import cloud.thehsi.sharedenderpearls.Listeners.Throw;
 import cloud.thehsi.sharedenderpearls.Update.UpdateChecker;
 import net.md_5.bungee.api.ChatColor;
@@ -19,19 +20,16 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-@SuppressWarnings("unused")
 public final class Main extends JavaPlugin {
 
     private final ToolBelt toolBelt = new ToolBelt(this);
 
-    public HashMap<String, Boolean> settings = new HashMap<>();
+    public Map<String, Boolean> settings = new LinkedHashMap<>();
     FileConfiguration config = getConfig();
 
-    public String version = "v1.2";
+    public String version = "v1.3.0";
 
     private void loadConfig() {
         for (String key : settings.keySet()) {
@@ -54,16 +52,28 @@ public final class Main extends JavaPlugin {
         saveConfig();
     }
 
+    @SuppressWarnings("unused")
     @Override
     public void onEnable() {
+        settings.put("canBeCrafted", false);
         settings.put("canStealPearls", false);
+        settings.put("cannotStealFromOPs", true);
+        settings.put("disableCooldown", false);
+        settings.put("disablePearlDamage", true);
+        settings.put("disablePostTeleportDamage", false);
         settings.put("disablePostTeleportFallDamage", false);
+        settings.put("doSpawnEndermites", false);
+        settings.put("dropPearls", false);
         settings.put("enabled", true);
+        settings.put("gravity", true);
+        settings.put("instant", false);
+        settings.put("keepHeadAfterCrafting", false);
 
         loadConfig();
 
         PluginManager pl = getServer().getPluginManager();
         pl.registerEvents(new Throw(this, this), this);
+        pl.registerEvents(new HeadToPearl(this, this), this);
 
         PluginCommand cmd = getCommand("sharedenderpearls");
         if (cmd != null) {
@@ -112,10 +122,9 @@ public final class Main extends JavaPlugin {
         }), 0, 10);
     }
 
+    @SuppressWarnings("unused")
     @Override
     public void onDisable() {
         setConfig();
     }
-
-
 }
