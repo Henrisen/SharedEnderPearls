@@ -7,7 +7,7 @@ Use /sep to configure the plugin
 
 ## Settings:
 >
->**canBeCrafted** (*FALSE*): Can craft Bound Ender Pearls using a players Head: ![Crafting](http://cdn.thehsi.cloud/assets/HMegaCrafter/SharedEnderPearls/pearl_crafting.png)
+>**canBeCrafted** (*FALSE*): Can craft Bound Ender Pearls using a players Head surrounded by four ender pears in a + arrangement
 >
 >**canStealPearls** (*FALSE*): Shift + Left Click any Player with an Ender Pearl to bind it to that Player
 >
